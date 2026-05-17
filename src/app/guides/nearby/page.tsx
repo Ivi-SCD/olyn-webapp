@@ -16,17 +16,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listGuides, seedGuides, type TourGuide } from "@/lib/api";
+import DynamicNearbyMap from "@/components/DynamicNearbyMap";
 
 interface NearbyGuide extends TourGuide {
   distance_km: number;
   eta_minutes: number;
+  sim_lat: number;
+  sim_lng: number;
 }
 
 function simulateNearbyDistance(lat: number, lng: number, guide: TourGuide): NearbyGuide {
   const seed = guide.name.length * 37 + guide.hourly_rate;
   const dist = 0.3 + (seed % 50) / 10;
   const eta = Math.round(dist * 4 + 2);
-  return { ...guide, distance_km: Math.round(dist * 10) / 10, eta_minutes: eta };
+  const angle = (seed * 2.3) % (2 * Math.PI);
+  const offsetLat = (dist / 111) * Math.cos(angle);
+  const offsetLng = (dist / 111) * Math.sin(angle);
+  return {
+    ...guide,
+    distance_km: Math.round(dist * 10) / 10,
+    eta_minutes: eta,
+    sim_lat: lat + offsetLat,
+    sim_lng: lng + offsetLng,
+  };
 }
 
 function PulsingDot() {
@@ -318,6 +330,21 @@ export default function NearbyGuidesPage() {
           </div>
         ) : (
           <>
+            <div className="h-56 rounded-xl overflow-hidden mb-4 border border-border shadow-sm">
+              <DynamicNearbyMap
+                userLocation={userLocation!}
+                guides={guides.map((g) => ({
+                  name: g.name,
+                  lat: g.sim_lat,
+                  lng: g.sim_lng,
+                  avatar_url: g.avatar_url,
+                  rating: g.rating,
+                  distance_km: g.distance_km,
+                }))}
+                onGuideClick={(i) => setSelectedGuide(guides[i])}
+              />
+            </div>
+
             <div className="bg-verde/8 rounded-xl p-3 mb-5 flex items-center gap-3">
               <div className="w-8 h-8 bg-verde/15 rounded-full flex items-center justify-center flex-shrink-0">
                 <Navigation size={14} className="text-verde" />

@@ -11,10 +11,12 @@ import {
   Footprints,
   Car,
   RotateCcw,
+  Map,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Itinerary, ItineraryItem, ItineraryDay } from "@/lib/types";
 import { WEEKDAY_PT } from "@/lib/constants";
+import DynamicItineraryMap from "@/components/DynamicItineraryMap";
 
 function TravelIndicator({ item }: { item: ItineraryItem }) {
   if (!item.travel_time_minutes || item.travel_time_minutes <= 0) return null;
@@ -319,6 +321,23 @@ export default function ItineraryView({
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6">
+        {(() => {
+          const allItems = itinerary.days.flatMap((d) => d.items);
+          const hasCoords = allItems.some((item) => item.latitude && item.longitude);
+          if (!hasCoords) return null;
+          return (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Map size={14} className="text-roxo" />
+                <h3 className="text-sm font-semibold text-grafite">Mapa do roteiro</h3>
+              </div>
+              <div className="h-52 rounded-xl overflow-hidden border border-border shadow-sm">
+                <DynamicItineraryMap items={allItems} />
+              </div>
+            </div>
+          );
+        })()}
+
         {itinerary.days.map((day) => (
           <DaySection key={day.day_number} day={day} />
         ))}
